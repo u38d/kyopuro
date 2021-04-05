@@ -1,10 +1,10 @@
 
 struct SegmentTree(T, alias F, T E) {
-	T[] nodeList;
-	size_t lowerOffset;
+	T[] nodeList; // 各ノードを格納する配列
+	size_t lowerOffset; // 末端ノードが始まるインデックス
 
 	this(T[] a) {
-		size_t len = 1;
+		size_t len = 1; // nodeListの長さ、2^n
 		while (len < a.length) {
 			len <<= 1;
 		}
@@ -12,16 +12,17 @@ struct SegmentTree(T, alias F, T E) {
 
 		nodeList = new T[len * 2 - 1];
 		nodeList[lowerOffset..lowerOffset + a.length] = a[];
-		nodeList[lowerOffset + a.length..$] = E;
+		nodeList[lowerOffset + a.length..$] = E; // 初期値Eで埋める
 
 		foreach_reverse (i;0..lowerOffset) {
 			nodeList[i] = F(nodeList[i * 2 + 1], nodeList[i * 2 + 2]);
 		}
 	}
 
-	void update(size_t index, T value) {
+	void update(size_t index, T value) { // indexをvalueで置き換え
 		auto current = lowerOffset + index;
 
+		assert(current < nodeList.length);
 		nodeList[current] = value;
 
 		do {
@@ -47,6 +48,9 @@ struct SegmentTree(T, alias F, T E) {
 			return F(valueL, valueR);
 		}
 
+		assert(a < b);
+		assert(b < nodeList.length - lowerOffset);
+
 		return get_(0, 0, lowerOffset + 1);
 	}
 }
@@ -54,20 +58,44 @@ struct SegmentTree(T, alias F, T E) {
 unittest {
 	import std.algorithm;
 
-	auto a = [1, 9, 8, 4, 3, 2, 5];
-	auto seg = SegmentTree!(int, (int a, int b) => min(a, b), int.max)(a);
+	{
+		// min
+		auto a = [1, 9, 8, 4, 3, 2, 5];
+		auto seg = SegmentTree!(int, (int a, int b) => min(a, b), int.max)(a);
 
-	auto b = [8, 4, 3, 0, 6, 3, 0];
-	foreach (i;0..min(a.length, b.length)) {
-		if (b[i] != 0) {
-			a[i] = b[i];
-			seg.update(i, b[i]);
+		auto b = [8, 4, 3, 0, 6, 3, 0];
+		foreach (i;0..min(a.length, b.length)) {
+			if (b[i] != 0) {
+				a[i] = b[i];
+				seg.update(i, b[i]);
+			}
+		}
+
+		foreach (i;0..a.length) {
+			foreach (j;i + 1..a.length + 1) {
+				assert(a[i..j].reduce!min == seg.get(i, j));
+			}
 		}
 	}
 
-	foreach (i;1..a.length) {
-		foreach (j;i + 1..a.length + 1) {
-			assert(a[i..j].reduce!min == seg.get(i, j));
+
+	{
+		// add
+		auto a = [1, 9, 8, 4, 3, 2, 5];
+		auto seg = SegmentTree!(int, (int a, int b) => a + b, 0)(a);
+
+		auto b = [8, 4, 3, 0, 6, 3, 0];
+		foreach (i;0..min(a.length, b.length)) {
+			if (b[i] != 0) {
+				a[i] = b[i];
+				seg.update(i, b[i]);
+			}
+		}
+
+		foreach (i;0..a.length) {
+			foreach (j;i + 1..a.length + 1) {
+				assert(a[i..j].sum == seg.get(i, j));
+			}
 		}
 	}
 }
