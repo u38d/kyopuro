@@ -3,7 +3,7 @@ struct SegmentTree(T, alias F, T E) {
 	T[] nodeList; // 各ノードを格納する配列
 	size_t lowerOffset; // 末端ノードが始まるインデックス
 
-	this(T[] a) {
+	this(const(T)[] a) {
 		size_t len = 1; // nodeListの長さ、2^n
 		while (len < a.length) {
 			len <<= 1;
@@ -67,7 +67,7 @@ unittest {
 		foreach (i;0..min(a.length, b.length)) {
 			if (b[i] != 0) {
 				a[i] = b[i];
-				seg.update(i, b[i]);
+				seg.update(i, a[i]);
 			}
 		}
 
@@ -88,7 +88,7 @@ unittest {
 		foreach (i;0..min(a.length, b.length)) {
 			if (b[i] != 0) {
 				a[i] = b[i];
-				seg.update(i, b[i]);
+				seg.update(i, a[i]);
 			}
 		}
 
