@@ -18,14 +18,23 @@ struct BinaryIndexedTree(T, alias F, alias RevF, T E) {
 		}
 	}
 
-	T get(size_t index) { // [0..index]の全要素の計算
+	T get0to(size_t end) { // [0..end)の計算
 		T result = E;
 
-		for (auto i = cast(long)index + 1;i > 0;i -= i & -i) {
+		for (auto i = cast(long)end;i > 0;i -= i & -i) {
 			result = F(result, nodeList[i - 1]);
 		}
-
 		return result;
+	}
+
+	T get(size_t start, size_t end) { // [start..end)の計算
+		assert(start <= end);
+
+		if (start == 0) {
+			return get0to(end);
+		}
+
+		return RevF(get0to(end), get0to(start));
 	}
 
 	void add(size_t index, T value) { // F(tree[index], value)を追加
@@ -35,9 +44,9 @@ struct BinaryIndexedTree(T, alias F, alias RevF, T E) {
 	}
 
 	void set(size_t index, T value) {
-		auto x = RevF(get(index), get(index - 1));
-		x = RevF(value, x);
-		add(index, x);
+		auto x = get(index, index + 1);
+		auto d = RevF(value, x);
+		add(index, d);
 	}
 }
 
@@ -51,6 +60,10 @@ unittest {
 		auto a = [1, 9, 8, 4, 3, 2, 5];
 		auto tree = BinaryIndexedTree!(int, (int a, int b) => a + b, (int a, int b) => a - b, 0)(a);
 
+		foreach (i;1..a.length) {
+			assert(a[0..i].sum == tree.get(0, i));
+		}
+
 		auto b = [8, 4, 3, 0, 6, 3, 0];
 		foreach (i;0..min(a.length, b.length)) {
 			if (b[i] != 0) {
@@ -59,10 +72,8 @@ unittest {
 			}
 		}
 
-
-		foreach (i;0..a.length - 1) {
-			// writeln(a[0..i + 1].sum, " : ", tree.get(i));
-			assert(a[0..i + 1].sum == tree.get(i));
+		foreach (i;1..a.length) {
+			assert(a[0..i].sum == tree.get(0, i));
 		}
 	}
 	{
@@ -70,6 +81,10 @@ unittest {
 		auto a = [1, 9, 8, 4, 3, 2, 5];
 		auto tree = BinaryIndexedTree!(int, (int a, int b) => a ^ b, (int a, int b) => a ^ b, 0)(a);
 
+		foreach (i;1..a.length) {
+			assert(a[0..i].reduce!"a ^ b" == tree.get(0, i));
+		}
+
 		auto b = [8, 4, 3, 0, 6, 3, 0];
 		foreach (i;0..min(a.length, b.length)) {
 			if (b[i] != 0) {
@@ -79,8 +94,8 @@ unittest {
 		}
 
 
-		foreach (i;0..a.length - 1) {
-			assert(a[0..i + 1].reduce!"a ^ b" == tree.get(i));
+		foreach (i;1..a.length) {
+			assert(a[0..i].reduce!"a ^ b" == tree.get(0, i));
 		}
 	}
 }
