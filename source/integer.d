@@ -88,7 +88,7 @@ unittest {
 
 // Integer (mod N)
 struct IntWithMod(T, T Mod) {
-	alias thisT = IntWithMod!(T, Mod);
+	alias thisT = IntWithMod!(T, Mod); // 自分を表すタイプ
 
 	T value;
 
@@ -114,37 +114,53 @@ struct IntWithMod(T, T Mod) {
 		return this;
 	}
 
-	ref opOpAssign(string op)(const thisT r) if (op == "+" || op == "*") {
-		mixin("value " ~ op ~ "= r.value;");
-		value %= Mod;
-		return this;
+	ref opOpAssign(string op)(const thisT r) if (op == "+" || op == "-" || op == "*") {
+		opOpAssign!(op)(r.value);
 	}
 
-	ref opOpAssign(string op)(const thisT r) if (op == "-") {
-		value -= r.value;
+	ref opOpAssign(string op)(const T r) if (op == "+" || op == "-" || op == "*") {
+		mixin("value " ~ op ~ "= r;");
+		value %= Mod;
 		if (value < 0) {
 			value += Mod;
 		}
 		return this;
 	}
 
-	auto opBinary(string op)(const thisT r) const {
+	auto opBinary(string op)(const thisT r) const if (op == "+" || op == "-" || op == "*") {
 		thisT t = this;
 
-		static if (op == "+") {
-			t += r;
-		} else static if (op == "-") {
-			t -= r;
-		} else static if (op == "*") {
-			t *= r;
-		} else {
-			static assert(false);
-		}
+		mixin("t " ~ op ~ "= r.value;");
 
 		return t;
+	}
+
+	auto opEquals(const thisT r) {
+		return value == r.value;
+	}
+
+	auto opEquals(const T r) {
+		auto s = r % Mod;
+		if (s < 0) {
+			s += Mod;
+		}
+		return value == s;
 	}
 
 	auto inv() @property const {
 		return modinv(value, Mod);
 	}
+}
+
+unittest {
+	enum Mod = 13;
+	int a = 25, b = 33, c = 11;
+
+	auto am = IntWithMod!(int, Mod)(a);
+	auto bm = IntWithMod!(int, Mod)(b);
+	auto cm = IntWithMod!(int, Mod)(c);
+
+	assert(am + bm == a + b);
+	assert(cm - am == c - a);
+	assert(am * cm == a * c);
 }
