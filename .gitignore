@@ -14,3 +14,5 @@ kyopuro-test-*
 *.obj
 *.lst
 source/app.d
+in.txt
+out.txt
