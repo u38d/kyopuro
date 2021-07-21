@@ -17,6 +17,14 @@ struct UnionFind {
 		d[] = -1;
 	}
 
+	size_t length() const @property {
+		return d.length;
+	}
+
+	bool isRoot(int x) @property {
+		return x == find(x);
+	}
+
 	int find(int x) {
 		if (d[x] < 0) return x;
 		return d[x] = find(d[x]);
