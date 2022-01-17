@@ -5,7 +5,7 @@ T gcd(T)(T a, T b) {
 	if (b == 0) {
 		return a;
 	}
-	return gcd(b, a % b);
+	return gcd(b, a % b); // @suppress(dscanner.confusing.argument_parameter_mismatch)
 }
 
 unittest {
@@ -19,7 +19,7 @@ long extgcd(long a, long b, ref long x, ref long y) {
 		y = 0;
 		return a;
 	} else {
-		auto d = extgcd(b, a % b, y, x);
+		auto d = extgcd(b, a % b, y, x); // @suppress(dscanner.confusing.argument_parameter_mismatch)
 		y -= (a / b) * x;
 		return d;
 	}
@@ -76,7 +76,7 @@ T modinv(T)(T a, T m) {
 unittest {
 
 	void test(long n, long m, long mod) {
-		assert((n * modinv(m, mod) % mod) == n / m);
+		assert((n * modinv(m, mod) % mod) == n / m); // @suppress(dscanner.confusing.argument_parameter_mismatch)
 	}
 
 	test(2, 2, 7);
@@ -135,16 +135,29 @@ struct IntWithMod(T, T Mod) {
 		return t;
 	}
 
-	auto opEquals(const thisT r) {
+	auto opEquals(const thisT r) @safe const {
 		return value == r.value;
 	}
 
-	auto opEquals(const T r) {
+	auto opEquals(const T r) @safe const {
 		auto s = r % Mod;
 		if (s < 0) {
 			s += Mod;
 		}
 		return value == s;
+	}
+
+	auto toHash() @safe const {
+		static if (isUnsigned!T) {
+			return cast(size_t)value;
+		} else {
+			if (value < 0) {
+				return cast(size_t)(value + 1 + T.max);
+			} else {
+				return cast(size_t)value + 1 + T.max;
+			}
+		}
+		assert(false);
 	}
 
 	auto inv() @property const {
@@ -163,4 +176,4 @@ unittest {
 	assert(am + bm == a + b);
 	assert(cm - am == c - a);
 	assert(am * cm == a * c);
-}
+} // @suppress(dscanner.confusing.argument_parameter_mismatch)
